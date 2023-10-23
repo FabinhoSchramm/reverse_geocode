@@ -45,15 +45,18 @@ class geopy:
                 data_frame = pd.read_excel(file)
                 for index,row in data_frame.iterrows():
                     ENDERECO = str(row['ENDEREÇO'])
-                    if len(ENDERECO) > 1:
-                        continue
-                    else:
-                        LAT = str(row['LATITUDE'])
-                        LONG = str(row['LONGITUDE'])
-                        CORDENADAS = LAT + ',' + LONG
+                    LAT = str(row['LATITUDE'])
+                    LONG = str(row['LONGITUDE'])
+                    CORDENADAS = LAT + ',' + LONG
+                    if ENDERECO == 'nan':
+                        if LAT == 'nan' and LONG == 'nan' or LAT == 'nan' or LONG == 'nan':
+                            continue
                         locator = Nominatim(user_agent='mygeocoder')
                         location = locator.reverse(CORDENADAS)
+                        print(location)
                         data_frame.at[index,'ENDEREÇO'] = str(location.raw['display_name'])
+                    else:
+                       continue
                 name = file.replace('.xlsx','')
                 data_frame.to_excel(f'{self.DIR}/{name[9:-1]}.xlsx',index=False)
                 list_dir = os.listdir(f'{self.LOCAL_PATH}/arquivos/')
