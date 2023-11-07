@@ -12,6 +12,8 @@ class geopy:
 
     LOCAL_PATH = os.getcwd()
 
+    COLUMNS = ['Unidade rastreada', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3','Unnamed: 4', 'Unnamed: 5']
+
     if OS_NAME == 'posix':
         DIR = os.path.join('/home', LOGIN_OS, 'Documentos', 'Relatorios')
     else:
@@ -19,7 +21,7 @@ class geopy:
 
     def mkdir(self) -> os:
         if self.LOGIN_OS in self.LOCAL_PATH:
-            verifica_dir = os.path.exists(os.path.join(self.DIR, 'Relatorios'))
+            verifica_dir = os.path.exists(os.path.join(self.DIR))
             if not verifica_dir:
                 os.mkdir(os.path.join(self.DIR, 'Relatorios'))
 
@@ -31,11 +33,11 @@ class geopy:
         return path
 
     def reverse_geocode(self, files: list) -> pd.DataFrame:
-        if len(files) >= 1:
-            for file in files:
-                print(file)
-                data_frame = pd.read_excel(file)
-                for index, row in data_frame.iterrows():
+        for file in files:
+            data_frame = pd.read_excel(file)
+            if data_frame.columns.equals(data_frame.columns):
+                new_data_frame = self.drop_rename(data_frame)
+                for index, row in new_data_frame.iterrows():
                     ENDERECO = str(row['Endereço'])
                     LAT = str(row['Latitude'])
                     LONG = str(row['Longitude'])
@@ -45,16 +47,42 @@ class geopy:
                             continue
                         locator = Nominatim(user_agent='mygeocoder')
                         location = locator.reverse(CORDENADAS)
-                        data_frame.at[index, 'Endereço'] = str(location.raw['display_name'])
+                        # geo = location.raw['address']
+                        address_parts = []  # Lista para armazenar partes do endereço
+                        geo = location.raw.get('address', {})
+                        if 'road' in geo:
+                            address_parts.append(geo['road'])
+                        if 'suburb' in geo:
+                            address_parts.append(geo['suburb'])
+                        if 'city' in geo:
+                            address_parts.append(geo['city'])
+                        if 'state' in geo:
+                            address_parts.append(geo['state'])
+                        if 'postcode' in geo:
+                            address_parts.append(geo['postcode'])
+                        if 'house_number' in geo:
+                            address_parts.append(geo['house_number'])
+                        address = ', '.join(address_parts)
+                        if not address:
+                            address = "Endereço não disponível"
+                        data_frame.at[index, 'Endereço'] = address
+                        print(address)
                     else:
                         continue
-                name = os.path.basename(file).replace('.xlsx', '')
-                data_frame.to_excel(os.path.join(self.DIR, f'{name}.xlsx'), index=False)
-            list_dir = os.listdir(os.path.join(self.LOCAL_PATH, 'arquivos'))
-            for file in list_dir:
-                os.remove(os.path.join('arquivos', file))
-        else:
-            return []
+            else:
+                print(f'{file}_error')
+            name = os.path.basename(file).replace('.xlsx', '')
+            data_frame.to_excel(os.path.join(self.DIR, f'{name}.xlsx'), index=False)
+        list_dir = os.listdir(os.path.join(self.LOCAL_PATH, 'arquivos'))
+        for file in list_dir:
+            os.remove(os.path.join('arquivos', file))
+        self.open_dir()
+
+    def drop_rename(self,data_frame:pd.DataFrame) -> pd.DataFrame:
+        data_frame.rename(columns={'Unnamed: 1':'Data do evento', 'Unnamed: 2':'Data da atualização',
+                'Unnamed: 3':'Latitude','Unnamed: 4':'Longitude','Unnamed: 5':'Endereço'},inplace=True)
+        data_frame.drop(index=0,inplace=True)
+        return data_frame
 
     def open_dir(self) -> None:
         if self.OS_NAME == 'posix':
@@ -68,7 +96,7 @@ class geopy:
     def run(self) -> None:
         self.mkdir()
         self.reverse_geocode(self.path())
-        self.open_dir()
+        
 
 if __name__ == '__main__':
     reverse_geocode = geopy()
