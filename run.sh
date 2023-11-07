@@ -2,11 +2,13 @@
 
 PATH=$(pwd)
 
-alias open=xdg-open
+# Ativar o ambiente virtual
+source $PATH/venv/bin/activate 
 
-. venv/bin/activate
-
-venv/bin/python3 reverse_geocode.py &
+python3 reverse_geocode.py &
 PID1=$!
 
 wait $PID1
+
+# Desativar o ambiente virtual (opcional)
+deactivate
