@@ -52,6 +52,8 @@ class geopy:
                         geo = location.raw.get('address', {})
                         if 'road' in geo:
                             address_parts.append(geo['road'])
+                        if 'house_number' in geo:
+                            address_parts.append(geo['house_number'])
                         if 'suburb' in geo:
                             address_parts.append(geo['suburb'])
                         if 'city' in geo:
@@ -60,8 +62,6 @@ class geopy:
                             address_parts.append(geo['state'])
                         if 'postcode' in geo:
                             address_parts.append(geo['postcode'])
-                        if 'house_number' in geo:
-                            address_parts.append(geo['house_number'])
                         address = ', '.join(address_parts)
                         if not address:
                             address = "Endereço não disponível"
